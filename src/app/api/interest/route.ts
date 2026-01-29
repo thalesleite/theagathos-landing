@@ -1,10 +1,24 @@
 import { NextResponse } from "next/server"
-import { interestSchema } from "@/lib/validation"
+import { supabaseAdmin } from "@/lib/superbase.server"
+import { sendInterestConfirmation } from "@/lib/mailer"
+import { z } from "zod"
 
-const SHEET_WEBHOOK =
-  "https://script.google.com/macros/s/AKfycbzfeqVhvAp1Ultg79EYYFXXRjty_cYwXK2EfwgaGIkBgw6GtNxGYBl2TqrpTefYneiP5w/exec"
+const interestSchema = z.object({
+  name: z.string().max(120).optional().nullable(),
+  email: z.string().email(),
+  city: z.string().max(120).optional().nullable(),
+  titles: z.string().max(2000).optional().nullable(),
+  authors: z.string().max(1000).optional().nullable(),
+  inStock: z.boolean().optional().nullable(),
+  onDemand: z.boolean().optional().nullable(),
+  priceRange: z.string().max(40).optional().nullable(),
+  preorder: z.boolean().optional().nullable(),
+  instagram: z.string().max(120).optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
+  consent: z.boolean().default(false),
+})
 
-// in-memory rate limit (per server instance)
+// Rate limit simples por IP (não persiste)
 const WINDOW_MS = 60_000
 const MAX_PER_WINDOW = 20
 const hits = new Map<string, { count: number; ts: number }>()
@@ -22,6 +36,7 @@ function rateLimit(ip: string) {
 }
 
 export async function POST(req: Request) {
+  // IP apenas para rate limit (não armazenamos)
   const ip =
     (
       req.headers.get("x-forwarded-for") ||
@@ -36,50 +51,54 @@ export async function POST(req: Request) {
   }
 
   try {
-    const json = await req.json()
-    const data = interestSchema.parse(json)
+    const payload = interestSchema.parse(await req.json())
 
-    // Log locally (useful to verify in dev)
-    console.log("[interest] submission", { ip, ...data })
-
-    // Fire-and-forget forward to Google Sheets
-    if (SHEET_WEBHOOK) {
-      ;(async () => {
-        const ua = (req.headers.get("user-agent") || "").slice(0, 300)
-        const url = new URL(SHEET_WEBHOOK)
-        url.searchParams.set("ip", ip)
-        url.searchParams.set("userAgent", ua)
-
-        const controller = new AbortController()
-        const TIMEOUT_MS = 12000
-        const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS)
-
-        try {
-          const resp = await fetch(url.toString(), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              ...data,
-              submittedAt: new Date().toISOString(),
-            }),
-            signal: controller.signal,
-          })
-          clearTimeout(timeout)
-          const txt = await resp.text().catch(() => "")
-          console.log("[interest] sheet forward status:", resp.status, txt)
-        } catch (err) {
-          clearTimeout(timeout)
-          console.error("[interest] sheet forward failed:", err)
-        }
-      })()
-    } else {
-      console.warn("[interest] SHEET_WEBHOOK not set; skipping forward")
+    // Minimização: campos opcionais normalizados para null
+    const clean = {
+      name: payload.name?.trim() || null,
+      email: payload.email.trim(),
+      city: payload.city?.trim() || null,
+      titles: payload.titles?.trim() || null,
+      authors: payload.authors?.trim() || null,
+      in_stock: !!payload.inStock,
+      on_demand: !!payload.onDemand,
+      price_range: payload.priceRange || null,
+      preorder: !!payload.preorder,
+      instagram: payload.instagram?.trim() || null,
+      notes: payload.notes?.trim() || null,
+      consent: !!payload.consent, // base legal para contato
+      submitted_at: new Date().toISOString(),
     }
 
-    // Respond to the user immediately (don’t block on Sheets)
+    // Inserção no Supabase
+    const { error } = await supabaseAdmin
+      .from("agathos_landing_interests")
+      .insert([clean])
+
+    if (error) {
+      console.error("[supabase] insert error:", error)
+      return NextResponse.json({ error: "DB insert failed" }, { status: 500 })
+    }
+
+    // Envio de e-mail apenas se houver consentimento
+    if (clean.consent) {
+      try {
+        await sendInterestConfirmation({
+          to: clean.email,
+          name: clean.name || undefined,
+        })
+      } catch (mailErr) {
+        // não falha a requisição por causa do e-mail
+        console.warn("[mail] send failed:", mailErr)
+      }
+    }
+
     return NextResponse.json({ ok: true })
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Invalid payload"
+    const msg =
+      typeof e === "object" && e !== null && "message" in e
+        ? (e as { message?: string }).message
+        : "Invalid payload"
     return NextResponse.json({ error: msg }, { status: 400 })
   }
 }

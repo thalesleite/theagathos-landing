@@ -12,8 +12,7 @@ export function SocialProof() {
             “Mais de 100 leitores já enviaram sugestões.”
           </p>
           <p className="text-sm text-muted">
-            Obrigado por ajudar a trazer mais beleza e cultura em português para
-            a Irlanda 🇵🇹🇧🇷🇮🇪
+            Obrigado por ajudar a trazer mais cultura para a Irlanda 🇵🇹🇧🇷🇮🇪
           </p>
         </div>
       </Container>
