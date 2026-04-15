@@ -81,7 +81,7 @@ export default async function AdminPage() {
     <main className="min-h-screen bg-[#FCFAF3] p-6">
       <div className="mx-auto max-w-7xl space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Agathos Admin</h1>
+          <h1 className="text-3xl font-bold">Agathos Dashboard</h1>
           <p className="text-slate-600">
             Dashboard privado das respostas da landing page.
           </p>
