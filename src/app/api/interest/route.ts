@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/superbase.server"
+import { supabaseAdmin } from "@/lib/supabase.server"
 import { sendInterestConfirmation } from "@/lib/mailer"
 import { z } from "zod"
 
