@@ -50,6 +50,9 @@ export default async function AdminPage() {
     .select("*")
     .order("submitted_at", { ascending: false })
 
+  console.log("[admin] data length:", data?.length)
+  console.log("[admin] error:", error)
+
   if (error) {
     return (
       <main className="min-h-screen bg-[#FCFAF3] p-6">
