@@ -13,11 +13,11 @@ export default function ThanksPage() {
             {/* Content */}
             <div className="p-6 sm:p-8 space-y-4 text-center">
               <div className="flex justify-center">
-                <Pill>Obrigado por construir a The Agathos Books 💛</Pill>
+                <Pill>Obrigado por construir a The Agathos Bookstore 💛</Pill>
               </div>
 
               <h1 className="text-3xl font-bold">
-                Obrigado por fazer parte da The Agathos Books 🎉
+                Obrigado por fazer parte da The Agathos Bookstore 🎉
               </h1>
 
               <p className="text-slate-700">

@@ -184,7 +184,7 @@ export default function InterestForm() {
       <div className="flex items-start gap-2">
         <input type="checkbox" name="consent" className="mt-1" />
         <p className="text-sm text-muted">
-          Concordo em receber novidades da The Agathos Books. Usaremos seus
+          Concordo em receber novidades da The Agathos Bookstore. Usaremos seus
           dados apenas para o lançamento.
         </p>
       </div>

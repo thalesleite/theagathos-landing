@@ -53,7 +53,7 @@ export default function LandingPage() {
       <Section id="interesse" className="section">
         <Container>
           <h2 className="text-lg font-semibold mb-2">
-            Ajude a montar o catálogo da The Agathos Books ✍️
+            Ajude a montar o catálogo da The Agathos Bookstore ✍️
           </h2>
           <p className="text-sm text-muted mb-4">
             Leva 1 minuto. Você recebe 10% de desconto no lançamento.
